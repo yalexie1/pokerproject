@@ -2,27 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project
+
+A poker game built as a self-contained web app (HTML + CSS + JS, no external dependencies).
+
 ## Running the App
 
 No build step required. Open directly in a browser:
 
 ```
-open tictactoe.html
+open poker.html
 ```
-
-## Architecture
-
-The entire project is a single self-contained file: `tictactoe.html` (HTML + CSS + JS, no external dependencies).
-
-**Game state** (JS variables):
-- `board` — 9-element array, each cell is `null`, `'X'`, or `'O'`
-- `current` — whose turn it is (`'X'` or `'O'`)
-- `gameOver` — boolean, blocks further moves after a win or draw
-- `scores` — object tracking `{ X, O, D }` across rounds
-
-**Win detection**: `WINS` constant holds all 8 winning lines (3 rows, 3 cols, 2 diagonals) as index triples. `checkWin()` iterates these against `board`.
-
-**DOM**: Cells are `.cell` elements with `data-i` attributes (0–8). State changes are applied by toggling classes (`x`, `o`, `taken`, `win`) and setting `textContent`.
 
 ## Git & GitHub Workflow
 
