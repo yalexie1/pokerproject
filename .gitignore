@@ -1,3 +1,21 @@
 .DS_Store
 *.code-workspace
 .claude/
+
+# CardVision — large files never committed to git
+cardvision/data/raw/
+cardvision/data/train/images/
+cardvision/data/val/images/
+cardvision/models/*.pt
+cardvision/models/*.onnx
+cardvision/runs/
+cardvision/server/static/results/
+cardvision/server/static/uploads/
+cardvision/server/uploads/
+cardvision/venv/
+cardvision/.venv/
+cardvision/output/
+**/__pycache__/
+*.pyc
+*.pt
+*.onnx

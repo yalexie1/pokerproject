@@ -1,0 +1,29 @@
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# raw iPhone photos — share via Google Drive, not git
+data/raw/
+
+# annotated images — only labels (.txt) are committed
+data/train/images/
+data/val/images/
+
+# trained model weights — share via Google Drive link in README
+models/*.pt
+models/*.onnx
+
+# YOLOv8 training output
+runs/
+
+# Flask upload temp folder and result images (generated at runtime)
+server/static/results/
+server/uploads/
+
+# Python venv
+venv/
+.venv/
+
+# macOS
+.DS_Store

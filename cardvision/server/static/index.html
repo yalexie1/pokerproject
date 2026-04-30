@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PokerVision — Card Detector</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>PokerVision <span class="subtitle">Card Detector</span></h1>
+  </header>
+
+  <main>
+    <div class="layout">
+
+      <!-- Left: image display with canvas overlay -->
+      <div class="image-panel">
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-hint" id="dropHint">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 16V4m0 0L8 8m4-4l4 4"/>
+              <rect x="2" y="14" width="20" height="8" rx="2"/>
+            </svg>
+            <p>Drop a photo here<br><span>or click to upload</span></p>
+          </div>
+          <div class="image-container" id="imageContainer" style="display:none">
+            <img id="resultImg" alt="Card detection result">
+            <canvas id="overlay"></canvas>
+          </div>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" style="display:none">
+        <div class="status-bar" id="statusBar">No photo processed yet</div>
+      </div>
+
+      <!-- Right: detection results -->
+      <div class="results-panel">
+        <h2>Detected Cards</h2>
+        <div class="card-list" id="cardList">
+          <p class="empty-state">Upload a photo to see detected cards</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>Auto-detect (Folder Watch)</h3>
+        <p class="help-text">
+          AirDrop photos to your watch folder and they appear here automatically.<br>
+          Start the watcher in a terminal:
+        </p>
+        <pre class="code-block">python cardvision/watch/folder_watcher.py \
+  --watch-dir ~/Desktop/CardDrop</pre>
+
+        <div class="poll-indicator" id="pollIndicator">
+          <span class="dot"></span> Polling for new results...
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    const dropZone = document.getElementById('dropZone');
+    const dropHint = document.getElementById('dropHint');
+    const imageContainer = document.getElementById('imageContainer');
+    const resultImg = document.getElementById('resultImg');
+    const overlay = document.getElementById('overlay');
+    const cardList = document.getElementById('cardList');
+    const statusBar = document.getElementById('statusBar');
+    const fileInput = document.getElementById('fileInput');
+    const ctx = overlay.getContext('2d');
+
+    let lastTimestamp = null;
+
+    // Drag and drop handlers
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) uploadFile(file);
+    });
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', e => { if (e.target.files[0]) uploadFile(e.target.files[0]); });
+
+    async function uploadFile(file) {
+      const form = new FormData();
+      form.append('image', file);
+      statusBar.textContent = 'Processing...';
+      try {
+        const res = await fetch('/api/upload', { method: 'POST', body: form });
+        const data = await res.json();
+        if (data.error) { statusBar.textContent = `Error: ${data.error}`; return; }
+        displayResult(data);
+      } catch (err) {
+        statusBar.textContent = `Upload failed: ${err.message}`;
+      }
+    }
+
+    function displayResult(data) {
+      if (!data.image_filename) return;
+      const imgUrl = `/static/results/${data.image_filename}?t=${Date.now()}`;
+      resultImg.onload = () => positionCanvas();
+      resultImg.src = imgUrl;
+      dropHint.style.display = 'none';
+      imageContainer.style.display = 'block';
+      renderCards(data.detections || []);
+      const t = data.timestamp ? new Date(data.timestamp * 1000).toLocaleTimeString() : '';
+      statusBar.textContent = `Source: ${data.source_filename || 'unknown'}  ·  ${t}`;
+      lastTimestamp = data.timestamp;
+    }
+
+    function positionCanvas() {
+      overlay.width = resultImg.naturalWidth;
+      overlay.height = resultImg.naturalHeight;
+      overlay.style.width = resultImg.offsetWidth + 'px';
+      overlay.style.height = resultImg.offsetHeight + 'px';
+    }
+
+    function renderCards(detections) {
+      if (!detections.length) {
+        cardList.innerHTML = '<p class="empty-state">No cards detected in this photo</p>';
+        return;
+      }
+      const suitName = { c: 'Clubs', d: 'Diamonds', h: 'Hearts', s: 'Spades' };
+      const rankName = { T: '10', J: 'Jack', Q: 'Queen', K: 'King', A: 'Ace' };
+      const suitSymbol = { c: '♣', d: '♦', h: '♥', s: '♠' };
+      const isRed = s => s === 'h' || s === 'd';
+
+      cardList.innerHTML = detections.map(d => {
+        const suit = d.class.slice(-1);
+        const rank = d.class.slice(0, -1);
+        const color = isRed(suit) ? 'red' : 'dark';
+        const fullName = `${rankName[rank] || rank} of ${suitName[suit] || suit}`;
+        return `
+          <div class="card-item ${color}">
+            <span class="card-badge">${rank}${suitSymbol[suit] || suit}</span>
+            <span class="card-name">${fullName}</span>
+            <span class="card-conf">${(d.confidence * 100).toFixed(0)}%</span>
+          </div>`;
+      }).join('');
+    }
+
+    // Poll for folder-watcher results every 2 seconds
+    async function pollLatest() {
+      try {
+        const res = await fetch('/api/latest');
+        const data = await res.json();
+        if (data.timestamp && data.timestamp !== lastTimestamp) {
+          displayResult(data);
+        }
+      } catch (_) {}
+    }
+
+    setInterval(pollLatest, 2000);
+    pollLatest();
+  </script>
+</body>
+</html>
