@@ -4,22 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Two components live in this repo:
+A Python computer vision system that detects playing cards (rank + suit) in iPhone photos using YOLOv8 and displays results in a browser UI with broadcast-style bounding-box overlays — similar to casino hole-card scanning systems.
 
-1. **`poker.html`** — A self-contained Texas Hold'em poker game (HTML + CSS + JS, no external dependencies).
-2. **`cardvision/`** — A Python computer vision system that detects playing cards in iPhone photos using YOLOv8 and displays results in a browser UI with bounding-box overlays.
+All code lives in `cardvision/`.
 
-## Running the Poker Game
-
-No build step required. Open directly in a browser:
-
-```
-open poker.html
-```
-
-## CardVision — Card Detection Subsystem
-
-### Setup (one-time)
+## Setup (one-time)
 
 ```bash
 cd cardvision
@@ -28,7 +17,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Running the System
+## Running the System
 
 Two terminal processes are needed simultaneously:
 
@@ -43,7 +32,7 @@ python cardvision/server/app.py
 
 You can also drag and drop photos directly in the browser without the watcher.
 
-### Training a Model
+## Training a Model
 
 1. Collect and annotate iPhone photos (see `cardvision/README.md` for the full workflow).
 2. Place annotated images + YOLO `.txt` labels in `cardvision/data/raw/`.
@@ -51,13 +40,13 @@ You can also drag and drop photos directly in the browser without the watcher.
 4. Run `python cardvision/scripts/train.py` — weights saved to `cardvision/runs/train/weights/best.pt`.
 5. Copy `best.pt` to `cardvision/models/best.pt`.
 
-### Quick Single-Image Test
+## Quick Single-Image Test
 
 ```bash
 python cardvision/scripts/predict.py --image path/to/photo.jpg
 ```
 
-### Large Files Policy
+## Large Files Policy
 
 The following are **gitignored** — share via the Google Drive link in `cardvision/README.md`:
 - `cardvision/data/raw/` — raw iPhone photos
